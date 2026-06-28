@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import superjson from "superjson";
 import { AddAiAssistant } from "@/components/dashboard/project/add-ai-assistant";
 import { AddApplication } from "@/components/dashboard/project/add-application";
+import { QuickDeployFromGithub } from "@/components/dashboard/project/quick-deploy-from-github";
 import { AddCompose } from "@/components/dashboard/project/add-compose";
 import { AddDatabase } from "@/components/dashboard/project/add-database";
 import { AddImport } from "@/components/dashboard/project/add-import";
@@ -1056,6 +1057,13 @@ const EnvironmentPage = (
 							</CardHeader>
 							<div className="flex flex-row gap-4 flex-wrap justify-between items-center">
 								<div className="flex flex-row gap-4 flex-wrap">
+									{permissions?.service.create && (
+										<QuickDeployFromGithub
+											environmentId={environmentId}
+											projectId={projectId}
+											projectName={projectData?.name}
+										/>
+									)}
 									<ProjectEnvironment projectId={projectId}>
 										<Button variant="outline">Project Environment</Button>
 									</ProjectEnvironment>

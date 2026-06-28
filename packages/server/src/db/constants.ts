@@ -42,6 +42,6 @@ if (DATABASE_URL) {
 			"postgres://dokploy:amukds4wi9001583845717ad2@dokploy-postgres:5432/dokploy";
 	} else {
 		dbUrl =
-			"postgres://dokploy:amukds4wi9001583845717ad2@localhost:5432/dokploy";
+			"postgres://dokploy:amukds4wi9001583845717ad2@localhost:5433/dokploy";
 	}
 }

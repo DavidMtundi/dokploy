@@ -47,6 +47,10 @@ const getDockerConfig = (): Docker => {
 
 	if (process.env.HOME) {
 		dockerSocketCandidates.push({
+			label: "Colima socket",
+			path: `${process.env.HOME}/.colima/default/docker.sock`,
+		});
+		dockerSocketCandidates.push({
 			label: "Rancher Desktop socket",
 			path: `${process.env.HOME}/.rd/docker.sock`,
 		});

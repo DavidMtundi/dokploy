@@ -42,5 +42,14 @@ yarn-error.log*
 .DS_Store
 *.pem
 
+# Legacy MVP (large generated dirs)
+legacy/**/node_modules
+legacy/**/.next
+legacy/**/data
+legacy/**/.env
+legacy/**/test-results
+
+# Docker parity test artifacts
+.docker-test/
 
 .db

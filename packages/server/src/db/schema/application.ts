@@ -98,7 +98,7 @@ export const applications = pgTable("application", {
 	previewCustomCertResolver: text("previewCustomCertResolver"),
 	previewLimit: integer("previewLimit").default(3),
 	isPreviewDeploymentsActive: boolean("isPreviewDeploymentsActive").default(
-		false,
+		true,
 	),
 	// Security: Require collaborator permissions for preview deployments
 	previewRequireCollaboratorPermissions: boolean(
@@ -183,7 +183,7 @@ export const applications = pgTable("application", {
 	applicationStatus: applicationStatus("applicationStatus")
 		.notNull()
 		.default("idle"),
-	buildType: buildType("buildType").notNull().default("nixpacks"),
+	buildType: buildType("buildType").notNull().default("railpack"),
 	railpackVersion: text("railpackVersion").default("0.15.4"),
 	herokuVersion: text("herokuVersion").default("24"),
 	publishDirectory: text("publishDirectory"),

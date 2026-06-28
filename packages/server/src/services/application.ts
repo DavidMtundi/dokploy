@@ -46,6 +46,9 @@ import {
 	updateIssueComment,
 } from "./github";
 import { generateApplyPatchesCommand } from "./patch";
+import { syncDetectedPortFromBuild } from "./build-port-sync";
+import { waitForDeployHealth } from "./deploy-health";
+import { applyRailwayTomlFromBuildDir } from "./railway-config";
 import {
 	findPreviewDeploymentById,
 	updatePreviewDeployment,
@@ -184,40 +187,72 @@ export const deployApplication = async ({
 		description: descriptionLog,
 	});
 
+	let railwayConfig: Awaited<ReturnType<typeof applyRailwayTomlFromBuildDir>> =
+		null;
+
 	try {
-		let command = "set -e;";
+		let cloneCommand = "set -e;";
 		if (application.sourceType === "github") {
-			command += await cloneGithubRepository(applicationEntity);
+			cloneCommand += await cloneGithubRepository(applicationEntity);
 		} else if (application.sourceType === "gitlab") {
-			command += await cloneGitlabRepository(applicationEntity);
+			cloneCommand += await cloneGitlabRepository(applicationEntity);
 		} else if (application.sourceType === "gitea") {
-			command += await cloneGiteaRepository(applicationEntity);
+			cloneCommand += await cloneGiteaRepository(applicationEntity);
 		} else if (application.sourceType === "bitbucket") {
-			command += await cloneBitbucketRepository(applicationEntity);
+			cloneCommand += await cloneBitbucketRepository(applicationEntity);
 		} else if (application.sourceType === "git") {
-			command += await cloneGitRepository(applicationEntity);
+			cloneCommand += await cloneGitRepository(applicationEntity);
 		} else if (application.sourceType === "docker") {
-			command += await buildRemoteDocker(application);
+			cloneCommand += await buildRemoteDocker(application);
+		}
+
+		const cloneWithLog = `(${cloneCommand}) >> ${deployment.logPath} 2>&1`;
+		if (serverId) {
+			await execAsyncRemote(serverId, cloneWithLog);
+		} else {
+			await execAsync(cloneWithLog);
 		}
 
 		if (application.sourceType !== "docker") {
-			command += await generateApplyPatchesCommand({
+			railwayConfig = await applyRailwayTomlFromBuildDir(applicationEntity);
+		}
+
+		const applicationForBuild = await findApplicationById(applicationId);
+		const buildEntity = {
+			...applicationForBuild,
+			serverId: applicationForBuild.buildServerId || applicationForBuild.serverId,
+		};
+
+		let buildCommand = "set -e;";
+		if (application.sourceType !== "docker") {
+			buildCommand += await generateApplyPatchesCommand({
 				id: application.applicationId,
 				type: "application",
 				serverId,
 			});
 		}
 
-		command += await getBuildCommand(application);
+		buildCommand += await getBuildCommand(buildEntity);
 
-		const commandWithLog = `(${command}) >> ${deployment.logPath} 2>&1`;
+		const buildWithLog = `(${buildCommand}) >> ${deployment.logPath} 2>&1`;
 		if (serverId) {
-			await execAsyncRemote(serverId, commandWithLog);
+			await execAsyncRemote(serverId, buildWithLog);
 		} else {
-			await execAsync(commandWithLog);
+			await execAsync(buildWithLog);
 		}
 
-		await mechanizeDockerContainer(application);
+		const detectedPort = await syncDetectedPortFromBuild(applicationForBuild);
+		const applicationReady = await findApplicationById(applicationId);
+		const deployEntity = {
+			...applicationReady,
+			serverId: applicationReady.buildServerId || applicationReady.serverId,
+		};
+
+		await mechanizeDockerContainer(deployEntity);
+		await waitForDeployHealth(deployEntity, {
+			detectedPort,
+			railwayConfig,
+		});
 		await updateDeploymentStatus(deployment.deploymentId, "done");
 		await updateApplicationStatus(applicationId, "done");
 

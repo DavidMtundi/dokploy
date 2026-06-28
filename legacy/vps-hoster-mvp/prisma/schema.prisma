@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum ProjectStatus {
+  IDLE
+  BUILDING
+  DEPLOYING
+  RUNNING
+  FAILED
+  STOPPED
+}
+
+enum DeploymentStatus {
+  QUEUED
+  CLONING
+  BUILDING
+  STARTING
+  SUCCESS
+  FAILED
+}
+
+enum Framework {
+  DOCKERFILE
+  NODE
+  PYTHON
+  GO
+  STATIC
+  UNKNOWN
+}
+
+enum BuildMethod {
+  AUTO
+  DOCKERFILE
+  NIXPACKS
+}
+
+enum AddonType {
+  POSTGRES
+  REDIS
+}
+
+enum AddonStatus {
+  PROVISIONING
+  RUNNING
+  STOPPED
+  FAILED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  apiKeys      ApiKey[]
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  keyHash    String    @unique
+  prefix     String
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Project {
+  id            String        @id @default(cuid())
+  name          String
+  slug          String        @unique
+  description   String?
+  repoUrl       String?
+  branch        String        @default("main")
+  rootDir       String        @default(".")
+  framework     Framework     @default(UNKNOWN)
+  buildMethod   BuildMethod   @default(AUTO)
+  buildCommand  String?
+  startCommand  String?
+  port          Int           @default(3000)
+  envVars       String        @default("{}")
+  status        ProjectStatus @default(IDLE)
+  webhookSecret String        @unique @default(cuid())
+  autoDeploy    Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  deployments Deployment[]
+  domains     Domain[]
+  addons      Addon[]
+}
+
+model Deployment {
+  id            String           @id @default(cuid())
+  projectId     String
+  project       Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status        DeploymentStatus @default(QUEUED)
+  commitSha     String?
+  commitMessage String?
+  imageTag      String?
+  containerId   String?
+  logs          String           @default("")
+  triggeredBy   String           @default("manual")
+  startedAt     DateTime         @default(now())
+  finishedAt    DateTime?
+
+  @@index([projectId])
+}
+
+model Domain {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  hostname  String   @unique
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+}
+
+model Addon {
+  id          String      @id @default(cuid())
+  projectId   String
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type        AddonType
+  name        String
+  status      AddonStatus @default(PROVISIONING)
+  containerId String?
+  config      String      @default("{}")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([projectId, type])
+  @@index([projectId])
+}
+
+model Setting {
+  key   String @id
+  value String
+}

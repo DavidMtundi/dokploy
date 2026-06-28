@@ -1,0 +1,60 @@
+services:
+  traefik:
+    image: traefik:v3.2
+    container_name: vps-hoster-traefik
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=vps-hoster"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-certs:/letsencrypt
+    networks:
+      - vps-hoster
+
+  app:
+    build: .
+    container_name: vps-hoster-panel
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: file:/data/prod.db
+      VPS_HOSTER_DATA_DIR: /var/lib/vps-hoster
+      VPS_HOSTER_NETWORK: vps-hoster
+      TRAEFIK_NETWORK: vps-hoster
+      VPS_HOSTER_BASE_DOMAIN: ${VPS_HOSTER_BASE_DOMAIN}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+      VPS_HOSTER_SESSION_SECRET: ${VPS_HOSTER_SESSION_SECRET}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - vps-hoster-data:/var/lib/vps-hoster
+      - vps-hoster-db:/data
+    networks:
+      - vps-hoster
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.panel.rule=Host(`${PANEL_DOMAIN}`)"
+      - "traefik.http.routers.panel.entrypoints=websecure"
+      - "traefik.http.routers.panel.tls=true"
+      - "traefik.http.routers.panel.tls.certresolver=letsencrypt"
+      - "traefik.http.services.panel.loadbalancer.server.port=3000"
+
+networks:
+  vps-hoster:
+    name: vps-hoster
+    driver: bridge
+
+volumes:
+  traefik-certs:
+  vps-hoster-data:
+  vps-hoster-db:

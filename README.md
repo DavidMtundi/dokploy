@@ -1,3 +1,5 @@
+> **VPS Hoster** — Railway-oriented fork of Dokploy. See [docs/FORK.md](docs/FORK.md) and [docs/RAILWAY-ROADMAP.md](docs/RAILWAY-ROADMAP.md). Upstream: [Dokploy](https://github.com/Dokploy/dokploy).
+
 <div align="center">
   <a href="https://dokploy.com">
     <img src=".github/sponsors/logo.png" alt="Dokploy - Open Source Alternative to Vercel, Heroku and Netlify." width="100%"  />

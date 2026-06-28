@@ -1,0 +1,17 @@
+# Local Docker testing — use with:
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
+
+services:
+  traefik:
+    profiles:
+      - production
+
+  app:
+    ports:
+      - "3000:3000"
+    environment:
+      VPS_HOSTER_BASE_DOMAIN: localhost
+      PANEL_DOMAIN: localhost
+      LETSENCRYPT_EMAIL: test@localhost
+      VPS_HOSTER_SESSION_SECRET: local-docker-test-secret-change-me
+    labels: []
