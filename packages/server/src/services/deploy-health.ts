@@ -5,7 +5,7 @@ import {
 } from "@dokploy/server/utils/railway-toml";
 import fs from "node:fs";
 import path from "node:path";
-import type { Application } from "./application";
+import type { Application, ApplicationWithRelations } from "./application";
 import { execAsync, execAsyncRemote } from "../utils/process/execAsync";
 
 const DOKPLOY_NETWORK = "dokploy-network";
@@ -46,7 +46,10 @@ function resolveTimeoutSec(railwayConfig: RailwayTomlConfig | null): number {
 	return DEFAULT_TIMEOUT_SEC;
 }
 
-function resolveTargetPort(application: Application, detected?: number): number {
+function resolveTargetPort(
+	application: ApplicationWithRelations,
+	detected?: number,
+): number {
 	return (
 		detected ??
 		application.ports?.[0]?.targetPort ??
@@ -100,7 +103,7 @@ async function probeHttp(
  * Poll the running service over the dokploy overlay network before marking deploy success.
  */
 export async function waitForDeployHealth(
-	application: Application,
+	application: ApplicationWithRelations,
 	options?: { detectedPort?: number; railwayConfig?: RailwayTomlConfig | null },
 ): Promise<void> {
 	if (application.buildType === "static" || application.publishDirectory) {

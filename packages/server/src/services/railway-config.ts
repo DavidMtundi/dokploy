@@ -11,11 +11,11 @@ import {
 	type RailwayTomlConfig,
 } from "@dokploy/server/utils/railway-toml";
 import { eq } from "drizzle-orm";
-import type { Application } from "./application";
+import type { ApplicationWithRelations } from "./application";
 import { execAsyncRemote } from "../utils/process/execAsync";
 
 async function readRailwayTomlFile(
-	application: Application,
+	application: ApplicationWithRelations,
 ): Promise<string | null> {
 	const buildDir = getBuildAppDirectory(application);
 	const tomlPath = path.join(buildDir, "railway.toml");
@@ -41,7 +41,7 @@ async function readRailwayTomlFile(
  * Reads railway.toml from the cloned repo and applies build/deploy hints to the application.
  */
 export async function applyRailwayTomlFromBuildDir(
-	application: Application,
+	application: ApplicationWithRelations,
 ): Promise<RailwayTomlConfig | null> {
 	const content = await readRailwayTomlFile(application);
 	if (!content) {

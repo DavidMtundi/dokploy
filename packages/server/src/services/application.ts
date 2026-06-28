@@ -55,6 +55,9 @@ import {
 } from "./preview-deployment";
 import { validUniqueServerAppName } from "./project";
 export type Application = typeof applications.$inferSelect;
+export type ApplicationWithRelations = Awaited<
+	ReturnType<typeof findApplicationById>
+>;
 
 export const createApplication = async (
 	input: z.infer<typeof apiCreateApplication>,

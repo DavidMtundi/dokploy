@@ -4,7 +4,10 @@ import { detectApplicationPort } from "@dokploy/server/utils/build-port-detect";
 import { getBuildAppDirectory } from "@dokploy/server/utils/filesystem/directory";
 import { manageDomain } from "@dokploy/server/utils/traefik/domain";
 import { eq } from "drizzle-orm";
-import { findApplicationById, type Application } from "./application";
+import {
+	findApplicationById,
+	type ApplicationWithRelations,
+} from "./application";
 import { updatePortById } from "./port";
 
 const DEFAULT_PORT = 3000;
@@ -13,7 +16,7 @@ const DEFAULT_PORT = 3000;
  * Sync domain and swarm port records when build metadata exposes a non-default port.
  */
 export async function syncDetectedPortFromBuild(
-	application: Application,
+	application: ApplicationWithRelations,
 ): Promise<number | undefined> {
 	const serverId = application.buildServerId || application.serverId;
 	const detected = await detectApplicationPort({
